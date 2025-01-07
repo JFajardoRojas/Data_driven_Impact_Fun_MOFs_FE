@@ -1,4 +1,4 @@
-# MOF Functionalization Free Energy Prediction Models
+# ML Data for: Data-driven Insights on the Impact of functionalization on Metal-Organic Framework (MOF) Free Energies
 
 This repository contains machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization. The repository includes the following data and models:
 
