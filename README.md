@@ -1,4 +1,5 @@
 # ML Data for: Data-driven Insights on the Impact of functionalization on Metal-Organic Framework (MOF) Free Energies
+Fernando Fajardo-Rojas, Ryther Anderson, Mingwei Li, Remco Chang, Diego A. Gómez-Gualdrón
 
 This repository contains machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization. The repository includes the following data and models:
 
