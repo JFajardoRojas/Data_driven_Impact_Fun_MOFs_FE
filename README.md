@@ -1,9 +1,12 @@
 # ML Data for: Data-driven Insights on the Impact of functionalization on Metal-Organic Framework (MOF) Free Energies
 Fernando Fajardo-Rojas, Ryther Anderson, Mingwei Li, Remco Chang, Diego A. Gómez-Gualdrón
 
-This repository contains machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization. The repository includes the following data and models:
+This repository contains the complete datasets used in the analysis presented in the publication and the machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization. The repository includes the following data and models:
 
 ## Repository Contents
+
+### **Datasets**
+This fodler contains 2 csv files containing all the data relevant free energy analysis in the 5133 MOFs (GENERAL_data_DimBridge.csv), and the data relevant to the topological change via functionalization in 62 polymorphic families (POLYMORPHS_data_DimBridge.csv)
 
 ### 1. **Training Data**
 The training data used for the development of each model is included in the repository. These datasets contain energy-related features that were used to train the models.
