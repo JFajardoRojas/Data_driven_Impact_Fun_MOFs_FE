@@ -1,39 +1,39 @@
 # ML Data for: Data-driven Insights on the Impact of functionalization on Metal-Organic Framework (MOF) Free Energies
 Fernando Fajardo-Rojas, Ryther Anderson, Mingwei Li, Remco Chang, Diego A. Gómez-Gualdrón
 
-This repository contains the complete datasets used in the analysis presented in the publication and the machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization. The repository includes the following data and models:
+This repository contains the complete datasets used in the analysis presented in the publication, the machine learning models developed to predict the change in free-energy of Metal-Organic Frameworks (MOFs) upon functionalization, example codes to complete the free energy calculations, and template codes to train XGBoost using the datasets for different levels of descriptor complexity.
 
 ## Repository Contents
 
+### **Complementary_code**
+This folder contains the training and usage template python codes to train XGBoost using the datasets available in this repository (general_training_model.py, model_use.py).
+It also has a solder **Simulation_Eample** with all the files needed to reproduce the free-energy calculations in LAMMPS. There is a README file in the folder explaining its usage.
+
 ### **Datasets**
-This fodler contains 2 csv files containing all the data relevant free energy analysis in the 5133 MOFs (GENERAL_data_DimBridge.csv), and the data relevant to the topological change via functionalization in 62 polymorphic families (POLYMORPHS_data_DimBridge.csv)
+This folder contains 2 .csv files. These have all the relevant data for free energy analysis in the 5133 MOFs (GENERAL_data_DimBridge.csv), and the relevant data for the topological change via functionalization in 62 polymorphic families (POLYMORPHS_data_DimBridge.csv)
 
-### 1. **Training Data**
-The training data used for the development of each model is included in the repository. These datasets contain energy-related features that were used to train the models.
+### **dSE_model**
+This folder contains the complete dataset used in the model development (data_set_model_dSE.csv), the final dataset division 80/20 (train_data_dSE.csv / test_data_dSE.csv), the final model trained (xgb_model_dSE.json), and its scaler file (scaler_dSE.pkl).
+This model uses as descriptors information about the parent MOF, the functionalization, and the change in strain energy.
 
-- **Trivial Model Data**: This dataset includes energy information such as ∆U, T∆S, and other energy-related features.
-- **Proper Model 1 Data**: This dataset contains only the components of the potential energy as features.
-- **Proper Model 2 Data**: This dataset uses ∆E of strain as a surrogate for ∆U as the unique energy information in the features.
-- **Proper Model 3 Data**: This dataset includes only information about the parent MOF and its functionalization scheme as features.
+### **dUdecouple_model**
+This folder contains the complete dataset used in the model development (data_set_model_dUdecouple.csv), the final dataset division 80/20 (train_data_dUdecouple.csv / test_data_dUdecouple.csv), the final model trained (xgb_model_dUdecouple.json), and its scaler file (scaler_dUdecouple.pkl).
+This model uses as descriptors information about the parent MOF, the functionalization, and the energetic components of the change in potential energy (∆U).
 
-### 2. **Trained Models**
-The repository contains the trained machine learning models for predicting the change in free-energy in MOFs upon functionalization. These models have been trained using the datasets mentioned above.
+### **prediction_model**
+This folder contains the complete dataset used in the model development (data_set_model_prediction.csv), the final dataset division 80/20 (train_data_prediction.csv / test_data_prediction.csv), the final model trained (xgb_model_prediction.json), and its scaler file (scaler_prediction.pkl).
+This model uses as descriptors information about the parent MOF and the functionalization.
 
-- **Trivial Model**: A baseline model that includes a variety of energy-related features, including ∆U and T∆S.
-- **Model 1**: A model focused solely on potential energy components.
-- **Model 2**: A model that uses ∆E of strain as a surrogate for ∆U in the feature space.
-- **Model 3**: A model that uses the parent MOF structure and functionalization scheme for predictions.
-
-### 3. **Scalers**
-Each model was trained with specific scalers to normalize the input data. The corresponding scalers used for each model are included in the repository.
+### **trivial**
+This folder contains the complete dataset used in the model development (data_set_model_trivial.csv), the final dataset division 80/20 (train_data_trivial.csv / test_data_trivial.csv), the final model trained (xgb_model_trivial.json), and its scaler file (scaler_trivial.pkl).
+This model uses as descriptors information about the parent MOF, the functionalization, change in potential energy (∆U), and change in entropy (T∆S).
 
 ## How to Use
 
 ### Requirements
-To use or test the models, you will need to install the following Python packages:
-- `scikit-learn`
-- `pandas`
-- `numpy`
-- `xgboost`
-- `matplotlib`
+To use or test the models, you will need to install the following Python packages
+- `scikit-learn 1.4.2`
+- `numpy 2.1.0`
+- `xgboost 2.1.3`
+- `matplotlib (Compatible Python 3.11.9)`
 - `joblib`
