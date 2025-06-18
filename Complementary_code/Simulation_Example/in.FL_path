@@ -1,0 +1,261 @@
+#------------------------------------------------------------------------------#
+# global variables and constants
+#------------------------------------------------------------------------------#
+
+###simulation variables
+
+variable        T       equal  300.0
+variable        p       equal  0.0
+variable        damp_T  equal  100
+variable        damp_P  equal  1000
+variable        dT      equal  1.0
+variable        t_eq    equal  30000
+variable        t_s     equal  400000
+variable        data    string data.SR_acs_v1-6c_Cr_1_Ch_1B_2NH2_Ch_2x2x2_ma5000
+variable        kb      equal  0.0019872041
+
+####random seeds
+
+variable        seed equal 2406
+
+#------------------------------------------------------------------------------#
+# simulation box definition and parameters
+#------------------------------------------------------------------------------#
+
+units           real
+atom_style      full
+boundary        p p p
+
+pair_style lj/cut 12.5
+bond_style harmonic
+angle_style hybrid fourier cosine/periodic
+dihedral_style harmonic
+improper_style fourier
+pair_modify shift yes mix geometric
+special_bonds lj 0.0 0.0 1.0
+
+
+dielectric      1.0
+box tilt        large
+read_data       ${data}
+
+#################################
+#------------------------------------------------------------------------------#
+# find the lattice constants with an NPT ensemble simulation
+#------------------------------------------------------------------------------#
+
+variable        xcm0 equal xcm(all,x)
+variable        ycm0 equal xcm(all,y)
+variable        zcm0 equal xcm(all,z)
+
+variable        a  equal lx
+variable        b  equal ly
+variable        c  equal lz
+variable        t1 equal xy
+variable        t2 equal xz
+variable        t3 equal yz
+
+fix             center0 all momentum 1 linear 1 1 1 rescale
+
+fix             f1 all nph tri ${p} ${p} ${damp_P} ptemp ${T} fixedpoint ${xcm0} ${ycm0} ${zcm0} &
+                scalexy no scaleyz no scalexz no &
+                flip no
+
+fix             f2 all temp/csvr ${T} ${T} ${damp_T} ${seed}
+compute         c1 all temp/com
+fix_modify      f1 temp c1
+fix_modify      f2 temp c1
+thermo_style    custom step c_c1 press lx ly lz xy xz yz
+thermo          0
+
+timestep        ${dT}
+run             100000
+reset_timestep  0
+thermo          10000
+fix             lcav all ave/time 1 100000 100000 v_a v_b v_c v_t1 v_t2 v_t3 mode scalar file avg_lcs.dat
+run             100000
+unfix           f1
+unfix           f2
+
+#------------------------------------------------------------------------------#
+# lattice change followed msd calculation
+#------------------------------------------------------------------------------#
+
+### resize box and minimize atom positions
+
+variable        af  equal f_lcav[1]
+variable        bf  equal f_lcav[2]
+variable        cf  equal f_lcav[3]
+variable        t1f equal f_lcav[4]
+variable        t2f equal f_lcav[5]
+variable        t3f equal f_lcav[6]
+change_box      all x  final 0.0 ${af} remap
+change_box      all y  final 0.0 ${bf} remap
+change_box      all z  final 0.0 ${cf} remap
+change_box      all xy final ${t1f} remap
+change_box      all xz final ${t2f} remap
+change_box      all yz final ${t3f} remap
+unfix           lcav
+
+### minimize atom positions before msd calculation
+
+minimize        1.0e-6 1.0e-6 100000 100000
+variable        v equal vol
+print           ${v} file volume.dat
+
+### msd calculation
+
+group g1 type 1
+group g2 type 2
+group g3 type 3
+group g4 type 4
+group g5 type 5
+group g6 type 6
+
+compute cmsd1 g1 msd com yes average no
+compute cmsd2 g2 msd com yes average no
+compute cmsd3 g3 msd com yes average no
+compute cmsd4 g4 msd com yes average no
+compute cmsd5 g5 msd com yes average no
+compute cmsd6 g6 msd com yes average no
+
+fix             f1 all nve
+fix             f2 all temp/csvr ${T} ${T} ${damp_T} ${seed}
+fix_modify      f2 temp c1
+thermo_style    custom step c_c1 lx ly lz xy xz yz c_cmsd1[4] c_cmsd2[4] c_cmsd3[4] c_cmsd4[4] c_cmsd5[4] c_cmsd6[4]
+run             50000
+
+reset_timestep  0
+
+fix fmsd1 all ave/time 1 1 50000 c_cmsd1[4] mode scalar file avg_msd1.dat
+fix fmsd2 all ave/time 1 1 50000 c_cmsd2[4] mode scalar file avg_msd2.dat
+fix fmsd3 all ave/time 1 1 50000 c_cmsd3[4] mode scalar file avg_msd3.dat
+fix fmsd4 all ave/time 1 1 50000 c_cmsd4[4] mode scalar file avg_msd4.dat
+fix fmsd5 all ave/time 1 1 50000 c_cmsd5[4] mode scalar file avg_msd5.dat
+fix fmsd6 all ave/time 1 1 50000 c_cmsd6[4] mode scalar file avg_msd6.dat
+
+run             50000
+
+#------------------------------------------------------------------------------#
+# calculate force constants
+#------------------------------------------------------------------------------#
+### initial force constants = (3 * kb * T)/msd
+
+variable msd1 equal f_fmsd1
+variable k01 equal (3*${kb}*${T})/${msd1}
+variable msd2 equal f_fmsd2
+variable k02 equal (3*${kb}*${T})/${msd2}
+variable msd3 equal f_fmsd3
+variable k03 equal (3*${kb}*${T})/${msd3}
+variable msd4 equal f_fmsd4
+variable k04 equal (3*${kb}*${T})/${msd4}
+variable msd5 equal f_fmsd5
+variable k05 equal (3*${kb}*${T})/${msd5}
+variable msd6 equal f_fmsd6
+variable k06 equal (3*${kb}*${T})/${msd6}
+
+### enforce lower bound of 10.0 kcal/mol
+
+if "${k01} < 10.0" then &
+	"variable k1 equal 10.0" &
+else &
+	"variable k1 equal ${k01}"
+if "${k02} < 10.0" then &
+	"variable k2 equal 10.0" &
+else &
+	"variable k2 equal ${k02}"
+if "${k03} < 10.0" then &
+	"variable k3 equal 10.0" &
+else &
+	"variable k3 equal ${k03}"
+if "${k04} < 10.0" then &
+	"variable k4 equal 10.0" &
+else &
+	"variable k4 equal ${k04}"
+if "${k05} < 10.0" then &
+	"variable k5 equal 10.0" &
+else &
+	"variable k5 equal ${k05}"
+if "${k06} < 10.0" then &
+	"variable k6 equal 10.0" &
+else &
+	"variable k6 equal ${k06}"
+
+### record type, number, force constant, and msd
+
+print "1 3072 12.0107 ${k1} ${msd1}" append force_k.dat
+print "2 384 51.9961 ${k2} ${msd2}" append force_k.dat
+print "3 2304 1.00794 ${k3} ${msd3}" append force_k.dat
+print "4 768 14.0067 ${k4} ${msd4}" append force_k.dat
+print "5 1536 15.9994 ${k5} ${msd5}" append force_k.dat
+print "6 128 15.9994 ${k6} ${msd6}" append force_k.dat
+
+### unfix and uncompute
+
+unfix           f1
+unfix           f2
+unfix fmsd1
+unfix fmsd2
+unfix fmsd3
+unfix fmsd4
+unfix fmsd5
+unfix fmsd6
+uncompute cmsd1
+uncompute cmsd2
+uncompute cmsd3
+uncompute cmsd4
+uncompute cmsd5
+uncompute cmsd6
+
+#------------------------------------------------------------------------------#
+# Frenkel-Ladd path
+#------------------------------------------------------------------------------#
+
+### minimize before switching procedure starts
+
+timestep        ${dT}
+neighbor        1.0 bin
+neigh_modify    every 1 check yes
+
+thermo_style    custom step pe c_c1
+#thermo          0
+minimize        1.0e-6 1.0e-6 100000 100000
+velocity        all create ${T} ${seed} rot yes dist gaussian
+reset_timestep  0
+
+### different fix for each force constant
+
+fix             f1 all nve
+fix              fs1 g1 ti/spring ${k1} ${t_s} ${t_eq} function 2
+fix              fs2 g2 ti/spring ${k2} ${t_s} ${t_eq} function 2
+fix              fs3 g3 ti/spring ${k3} ${t_s} ${t_eq} function 2
+fix              fs4 g4 ti/spring ${k4} ${t_s} ${t_eq} function 2
+fix              fs5 g5 ti/spring ${k5} ${t_s} ${t_eq} function 2
+fix              fs6 g6 ti/spring ${k6} ${t_s} ${t_eq} function 2
+fix             f2 all temp/csvr ${T} ${T} ${damp_T} ${seed}
+fix_modify      f2 temp c1
+
+### output variables
+
+variable        dE equal pe-(f_fs1+f_fs2+f_fs3+f_fs4+f_fs5+f_fs6)
+variable        lambda equal f_fs1[1]
+variable        t_eq equal ${t_eq}-1
+variable        t_s equal ${t_s}+1
+
+### forward integration, save to forward.dat
+
+run             ${t_eq}
+fix             f4 all print 1 "${dE} ${lambda}" title "# dE lambda" &
+                screen no file forward.dat
+run             ${t_s}
+unfix           f4
+
+### backward integration, save to backward.dat
+
+run             ${t_eq}
+fix             f4 all print 1 "${dE} ${lambda}" title "# dE lambda" &
+                screen no file backward.dat
+run             ${t_s}
+unfix           f4
+
+#------------------------------------------------------------------------------#
